@@ -1,0 +1,31 @@
+name:          servant-hasql-realworld-example-app
+version:       0.1.0.0
+license:       BSD3
+license-file:  LICENSE
+author:        Brad Parker
+maintainer:    hi@bradparker.com
+build-type:    Simple
+cabal-version: >=1.10
+
+executable servant-hasql-realworld-example-app
+  main-is:
+    Main.hs
+  other-modules:
+    RealWorld.Conduit.Articles.Article
+    RealWorld.Conduit.Articles.Database
+    RealWorld.Conduit.Users.Profile
+  build-depends:
+    base >=4.11 && <4.12,
+    bytestring,
+    contravariant,
+    hasql,
+    neat-interpolation,
+    raw-strings-qq,
+    squeal-postgresql,
+    containers,
+    time,
+    text
+  hs-source-dirs:
+    src
+  default-language:
+    Haskell2010

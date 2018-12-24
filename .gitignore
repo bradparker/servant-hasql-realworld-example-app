@@ -1,0 +1,4 @@
+.envrc
+.ghc.environment.*
+dist
+dist-newstyle
