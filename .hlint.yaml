@@ -1,0 +1,7 @@
+- arguments:
+  - -XOverloadedStrings
+  - -XDataKinds
+  - -XOverloadedLabels
+  - -XOverloadedStrings
+  - -XTypeOperators
+  - -XTypeApplications

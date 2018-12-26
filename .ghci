@@ -1,1 +1,8 @@
 :set -isrc
+:set -Wall
+:set -XOverloadedStrings
+:set -XDataKinds
+:set -XOverloadedLabels
+:set -XOverloadedStrings
+:set -XTypeOperators
+:set -XTypeApplications

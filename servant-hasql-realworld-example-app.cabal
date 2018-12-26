@@ -13,19 +13,28 @@ executable servant-hasql-realworld-example-app
   other-modules:
     RealWorld.Conduit.Articles.Article
     RealWorld.Conduit.Articles.Database
+    RealWorld.Conduit.Database.Schema
     RealWorld.Conduit.Users.Profile
+    Squeal.PostgreSQL.Extended
   build-depends:
     base >=4.11 && <4.12,
     bytestring,
+    containers,
     contravariant,
     hasql,
-    neat-interpolation,
-    raw-strings-qq,
     squeal-postgresql,
-    containers,
-    time,
-    text
+    text,
+    time
   hs-source-dirs:
     src
   default-language:
     Haskell2010
+  ghc-options:
+    -Wall
+  default-extensions:
+    OverloadedStrings
+    DataKinds
+    OverloadedLabels
+    OverloadedStrings
+    TypeOperators
+    TypeApplications
