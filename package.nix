@@ -1,5 +1,5 @@
 { mkDerivation, base, bytestring, containers, contravariant, hasql
-, squeal-postgresql, stdenv, text, time
+, lens, process, squeal-postgresql, stdenv, text, time
 }:
 mkDerivation {
   pname = "servant-hasql-realworld-example-app";
@@ -7,9 +7,13 @@ mkDerivation {
   src = ./.;
   isLibrary = false;
   isExecutable = true;
-  executableHaskellDepends = [
-    base bytestring containers contravariant hasql squeal-postgresql
-    text time
+  libraryHaskellDepends = [
+    base bytestring containers contravariant hasql lens
+    squeal-postgresql text time
   ];
+  executableHaskellDepends = [
+    base bytestring hasql process squeal-postgresql
+  ];
+  doHaddock = false;
   license = stdenv.lib.licenses.bsd3;
 }
