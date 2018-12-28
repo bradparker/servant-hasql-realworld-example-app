@@ -5,6 +5,7 @@ module RealWorld.Conduit.Database.Schema
   , FavoritesTable
   , FollowsTable
   , TagsTable
+  , CommentsTable
   ) where
 
 import Squeal.PostgreSQL.Extended
@@ -31,45 +32,59 @@ type UsersTable =
 type ArticlesTable =
   'Table (
     '[ "pk_articles" ::: 'PrimaryKey '["id"]
-     , "fk_author__id" ::: 'ForeignKey '["author__id"] "users" '["id"]
+     , "fk_author_id" ::: 'ForeignKey '["author_id"] "users" '["id"]
      ] :=>
     '[ "id"   ::: 'Def :=> 'NotNull 'PGint8
      , "body" ::: 'NoDef :=> 'NotNull 'PGtext
      , "slug" ::: 'NoDef :=> 'NotNull 'PGtext
      , "title" ::: 'NoDef :=> 'NotNull 'PGtext
      , "description" ::: 'NoDef :=> 'NotNull 'PGtext
-     , "author__id" ::: 'NoDef :=> 'NotNull 'PGint8
+     , "author_id" ::: 'NoDef :=> 'NotNull 'PGint8
      , "created_at" ::: 'NoDef :=> 'NotNull 'PGtimestamptz
      , "updated_at" ::: 'NoDef :=> 'NotNull 'PGtimestamptz
      ])
 
 type FavoritesTable =
   'Table (
-    '[ "pk_favorites" ::: 'PrimaryKey '["user__id", "article__id"]
-     , "fk_user__id" ::: 'ForeignKey '["user__id"] "users" '["id"]
-     , "fk_article__id" ::: 'ForeignKey '["article__id"] "articles" '["id"]
+    '[ "pk_favorites" ::: 'PrimaryKey '["user_id", "article_id"]
+     , "fk_user_id" ::: 'ForeignKey '["user_id"] "users" '["id"]
+     , "fk_article_id" ::: 'ForeignKey '["article_id"] "articles" '["id"]
      ] :=>
-    '[ "user__id" ::: 'NoDef :=> 'NotNull 'PGint8
-     , "article__id" ::: 'NoDef :=> 'NotNull 'PGint8
+    '[ "user_id" ::: 'NoDef :=> 'NotNull 'PGint8
+     , "article_id" ::: 'NoDef :=> 'NotNull 'PGint8
      ])
 
 type FollowsTable =
   'Table (
-    '[ "pk_follows" ::: 'PrimaryKey '["follower__id", "followee__id"]
-     , "fk_follower__id" ::: 'ForeignKey '["follower__id"] "users" '["id"]
-     , "fk_followee__id" ::: 'ForeignKey '["followee__id"] "users" '["id"]
+    '[ "pk_follows" ::: 'PrimaryKey '["follower_id", "followee_id"]
+     , "fk_follower_id" ::: 'ForeignKey '["follower_id"] "users" '["id"]
+     , "fk_followee_id" ::: 'ForeignKey '["followee_id"] "users" '["id"]
      ] :=>
-    '[ "follower__id" ::: 'NoDef :=> 'NotNull 'PGint8
-     , "followee__id" ::: 'NoDef :=> 'NotNull 'PGint8
+    '[ "follower_id" ::: 'NoDef :=> 'NotNull 'PGint8
+     , "followee_id" ::: 'NoDef :=> 'NotNull 'PGint8
      ])
 
 type TagsTable =
   'Table (
-    '[ "pk_article_tags" ::: 'PrimaryKey '["article__id", "tag__name"]
-     , "fk_article_tag_article__id" ::: 'ForeignKey '["article__id"] "articles" '["id"]
+    '[ "pk_tags" ::: 'PrimaryKey '["article_id", "name"]
+     , "fk_tag_article_id" ::: 'ForeignKey '["article_id"] "articles" '["id"]
      ] :=>
-    '[ "article__id" ::: 'NoDef :=> 'NotNull 'PGint8
-     , "tag__name" ::: 'NoDef :=> 'NotNull 'PGtext
+    '[ "article_id" ::: 'NoDef :=> 'NotNull 'PGint8
+     , "name" ::: 'NoDef :=> 'NotNull 'PGtext
+     ])
+
+type CommentsTable =
+  'Table (
+    '[ "pk_comments" ::: 'PrimaryKey '["id"]
+     , "fk_comment_author_id" ::: 'ForeignKey '["author_id"] "users" '["id"]
+     , "fk_comment_article_id" ::: 'ForeignKey '["article_id"] "articles" '["id"]
+     ] :=>
+    '[ "id" ::: 'Def :=> 'NotNull 'PGint8
+     , "body" ::: 'NoDef :=> 'NotNull 'PGtext
+     , "author_id" ::: 'NoDef :=> 'NotNull 'PGint8
+     , "article_id" ::: 'NoDef :=> 'NotNull 'PGint8
+     , "created_at" ::: 'NoDef :=> 'NotNull 'PGtimestamptz
+     , "updated_at" ::: 'NoDef :=> 'NotNull 'PGtimestamptz
      ])
 
 type Schema =
@@ -77,5 +92,6 @@ type Schema =
    , "articles" ::: ArticlesTable
    , "favorites" ::: FavoritesTable
    , "follows" ::: FollowsTable
-   , "article_tags" ::: TagsTable
+   , "tags" ::: TagsTable
+   , "comments" ::: CommentsTable
    ]

@@ -1,15 +1,20 @@
 let
   nixpkgs = import ./nix/packages;
-  package = import ./.;
-in
-  nixpkgs.lib.overrideDerivation package.env (drv: {
-    nativeBuildInputs =
-      drv.nativeBuildInputs ++
-      [ nixpkgs.postgresql ];
-    shellHook = drv.shellHook + "
-      mkdir -p $PWD/database/pgdata
-      export PGDATA=$PWD/database/pgdata
+  tools =
+    [
+      nixpkgs.direnv
+      nixpkgs.postgresql
+    ];
 
-      mkdir -p $PWD/logs
+  package = import ./.;
+  packageWithTools =
+    nixpkgs.haskell.lib.addBuildDepends package tools;
+in
+  nixpkgs.lib.overrideDerivation packageWithTools.env (drv: {
+    shellHook = drv.shellHook + "
+      mkdir -p $PWD/.dev/pgdata
+      export PGDATA=$PWD/.dev/pgdata
+
+      mkdir -p $PWD/.dev/logs
     ";
   })

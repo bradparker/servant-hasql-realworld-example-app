@@ -91,7 +91,7 @@ selectArticlesQuery =
         `as` #article_description :*
       #articles ! #body
         `as` #article_body :*
-      arrayAgg (#article_tags ! #tag__name)
+      arrayAgg (#tags ! #name)
         `as` #article_tags_list :*
       #articles ! #created_at
         `as` #article_created_at :*
@@ -101,9 +101,9 @@ selectArticlesQuery =
         (ifThenElse
           (isNull (param @1))
           false
-          (fromNull false (#favorites ! #user__id .== param @1)))
+          (fromNull false (#favorites ! #user_id .== param @1)))
         `as` #article_favorited :*
-      count (#favorites ! #user__id)
+      count (#favorites ! #user_id)
         `as` #article_favorites_count :*
 
       #authors ! #username
@@ -116,23 +116,23 @@ selectArticlesQuery =
         (ifThenElse
           (isNull (param @1))
           false
-          (fromNull false (#follows ! #follower__id .== param @1)))
+          (fromNull false (#follows ! #follower_id .== param @1)))
         `as` #author_following
     )
 
   $ from (table (#articles `as` #articles)
       & leftOuterJoin
           (table (#favorites `as` #favorites))
-          (#articles ! #id .== #favorites ! #article__id)
+          (#articles ! #id .== #favorites ! #article_id)
       & leftOuterJoin
-          (table (#article_tags `as` #article_tags))
-          (#articles ! #id .== #article_tags ! #article__id)
+          (table (#tags `as` #tags))
+          (#articles ! #id .== #tags ! #article_id)
       & innerJoin
           (table (#users `as` #authors))
-          (#articles ! #author__id .== #authors ! #id)
+          (#articles ! #author_id .== #authors ! #id)
       & leftOuterJoin
           (table (#follows `as` #follows))
-          (#authors ! #id .== #follows ! #followee__id))
+          (#authors ! #id .== #follows ! #followee_id))
 
   & groupBy
       ( #articles ! #slug :*

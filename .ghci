@@ -2,11 +2,8 @@
 :set -iapp
 :set -Wall
 :set -XDataKinds
-:set -XKindSignatures
 :set -XOverloadedLabels
-:set -XOverloadedStrings
 :set -XOverloadedStrings
 :set -XScopedTypeVariables
 :set -XTypeApplications
-:set -XTypeFamilies
 :set -XTypeOperators

@@ -73,12 +73,12 @@ selectProfilesQuery =
         (ifThenElse
           (isNull (param @1))
           false
-          (fromNull false (#follows ! #follower__id .== param @1)))
+          (fromNull false (#follows ! #follower_id .== param @1)))
         `as` #following )
   $ from (table (#users `as` #profiles)
       & leftOuterJoin
           (table (#follows `as` #follows))
-          (#profiles ! #id .== #follows ! #followee__id))
+          (#profiles ! #id .== #follows ! #followee_id))
   & groupBy
       ( #profiles ! #username :*
         #profiles ! #bio :*

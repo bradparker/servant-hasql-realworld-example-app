@@ -2,11 +2,13 @@ module Main
   ( main
   ) where
 
-import Data.Maybe (listToMaybe)
-import System.Exit (die)
-import System.Process (readProcess)
-import qualified Data.ByteString.Char8 as BS
+import Control.Monad (unless, when)
+import qualified Data.ByteString.Char8 as ByteString
+import Data.ByteString.Char8 (ByteString)
 import Data.Functor (void)
+import Data.Maybe (listToMaybe)
+import Network.URI (URI)
+import qualified Network.URI as URI
 import RealWorld.Conduit.Database.Schema
   ( ArticlesTable
   , FavoritesTable
@@ -14,6 +16,7 @@ import RealWorld.Conduit.Database.Schema
   , Schema
   , TagsTable
   , UsersTable
+  , CommentsTable
   )
 import Squeal.PostgreSQL.Extended
   ( (:::)
@@ -40,7 +43,9 @@ import Squeal.PostgreSQL.Migration
   , migrateDown
   , migrateUp
   )
-import System.Environment (getEnv, getArgs)
+import System.Environment (getArgs, getEnv)
+import System.Exit (die)
+import System.Process (readProcess)
 
 makeUsers :: Migration IO '[] '["users" ::: UsersTable]
 makeUsers =
@@ -78,12 +83,12 @@ makeArticles =
             notNullable text `as` #slug :*
             notNullable text `as` #title :*
             notNullable text `as` #description :*
-            notNullable int8 `as` #author__id :*
+            notNullable int8 `as` #author_id :*
             notNullable timestampWithTimeZone `as` #created_at :*
             notNullable timestampWithTimeZone `as` #updated_at )
           ( primaryKey #id `as` #pk_articles :*
-            foreignKey #author__id #users #id
-              OnDeleteCascade OnUpdateCascade `as` #fk_author__id )
+            foreignKey #author_id #users #id
+              OnDeleteCascade OnUpdateCascade `as` #fk_author_id )
     , down = void . define $ dropTable #articles
     }
 
@@ -104,13 +109,13 @@ makeFavorites =
         void . define $
         createTable
           #favorites
-          ( notNullable int8 `as` #user__id :*
-            notNullable int8 `as` #article__id )
-          ( primaryKey (#user__id  :* #article__id) `as` #pk_favorites :*
-            foreignKey #user__id #users #id
-              OnDeleteCascade OnUpdateCascade `as` #fk_user__id :*
-            foreignKey #article__id #articles #id
-              OnDeleteCascade OnUpdateCascade `as` #fk_article__id )
+          ( notNullable int8 `as` #user_id :*
+            notNullable int8 `as` #article_id )
+          ( primaryKey (#user_id  :* #article_id) `as` #pk_favorites :*
+            foreignKey #user_id #users #id
+              OnDeleteCascade OnUpdateCascade `as` #fk_user_id :*
+            foreignKey #article_id #articles #id
+              OnDeleteCascade OnUpdateCascade `as` #fk_article_id )
     , down = void . define $ dropTable #favorites
     }
 
@@ -133,13 +138,13 @@ makeFollows =
         void . define $
         createTable
           #follows
-          ( notNullable int8 `as` #follower__id :*
-            notNullable int8 `as` #followee__id )
-          ( primaryKey (#follower__id  :* #followee__id) `as` #pk_follows :*
-            foreignKey #follower__id #users #id
-              OnDeleteCascade OnUpdateCascade `as` #fk_follower__id :*
-            foreignKey #followee__id #users #id
-              OnDeleteCascade OnUpdateCascade `as` #fk_followee__id )
+          ( notNullable int8 `as` #follower_id :*
+            notNullable int8 `as` #followee_id )
+          ( primaryKey (#follower_id  :* #followee_id) `as` #pk_follows :*
+            foreignKey #follower_id #users #id
+              OnDeleteCascade OnUpdateCascade `as` #fk_follower_id :*
+            foreignKey #followee_id #users #id
+              OnDeleteCascade OnUpdateCascade `as` #fk_followee_id )
     , down = void . define $ dropTable #follows
     }
 
@@ -155,21 +160,58 @@ makeTags
         , "articles" ::: ArticlesTable
         , "favorites" ::: FavoritesTable
         , "follows" ::: FollowsTable
-        , "article_tags" ::: TagsTable
+        , "tags" ::: TagsTable
         ]
 makeTags =
   Migration
-    { name = "make article_tags table"
+    { name = "make tags table"
     , up =
         void . define $
         createTable
-          #article_tags
-          ( notNullable int8 `as` #article__id :*
-            notNullable text `as` #tag__name )
-          ( primaryKey (#article__id  :* #tag__name) `as` #pk_article_tags :*
-            foreignKey #article__id #articles #id
-              OnDeleteCascade OnUpdateCascade `as` #fk_article_tag_article__id )
-    , down = void . define $ dropTable #article_tags
+          #tags
+          ( notNullable int8 `as` #article_id :*
+            notNullable text `as` #name )
+          ( primaryKey (#article_id  :* #name) `as` #pk_tags :*
+            foreignKey #article_id #articles #id
+              OnDeleteCascade OnUpdateCascade `as` #fk_tag_article_id )
+    , down = void . define $ dropTable #tags
+    }
+
+makeComments
+  :: Migration
+       IO
+       '[ "users" ::: UsersTable
+        , "articles" ::: ArticlesTable
+        , "favorites" ::: FavoritesTable
+        , "follows" ::: FollowsTable
+        , "tags" ::: TagsTable
+        ]
+       '[ "users" ::: UsersTable
+        , "articles" ::: ArticlesTable
+        , "favorites" ::: FavoritesTable
+        , "follows" ::: FollowsTable
+        , "tags" ::: TagsTable
+        , "comments" ::: CommentsTable
+        ]
+makeComments =
+  Migration
+    { name = "make comments table"
+    , up =
+        void . define $
+        createTable
+          #comments
+          ( serial8 `as` #id :*
+            notNullable text `as` #body :*
+            notNullable int8 `as` #author_id :*
+            notNullable int8 `as` #article_id :*
+            notNullable timestampWithTimeZone `as` #created_at :*
+            notNullable timestampWithTimeZone `as` #updated_at )
+          ( primaryKey #id `as` #pk_comments :*
+            foreignKey #author_id #users #id
+              OnDeleteCascade OnUpdateCascade `as` #fk_comment_author_id :*
+            foreignKey #article_id #articles #id
+              OnDeleteCascade OnUpdateCascade `as` #fk_comment_article_id )
+    , down = void . define $ dropTable #comments
     }
 
 migrations :: AlignedList (Migration IO) '[] Schema
@@ -179,13 +221,20 @@ migrations =
     :>> makeFavorites
     :>> makeFollows
     :>> makeTags
+    :>> makeComments
     :>> Done
 
-migrateAll :: BS.ByteString -> IO ()
-migrateAll databaseUrl = withConnection databaseUrl $ migrateUp migrations
+migrateAll :: ByteString -> IO ()
+migrateAll databaseUrl = do
+  awaitDatabaseReady =<< parseDatabaseUrl databaseUrl
+  putStrLn "Applying all migrations"
+  withConnection databaseUrl $ migrateUp migrations
 
-rollbackAll :: BS.ByteString -> IO ()
-rollbackAll databaseUrl = withConnection databaseUrl $ migrateDown migrations
+rollbackAll :: ByteString -> IO ()
+rollbackAll databaseUrl = do
+  awaitDatabaseReady =<< parseDatabaseUrl databaseUrl
+  putStrLn "Rolling back all migrations"
+  withConnection databaseUrl $ migrateDown migrations
 
 initDB :: IO ()
 initDB =
@@ -193,19 +242,93 @@ initDB =
 
 startDB :: IO ()
 startDB =
-  putStrLn =<< readProcess "pg_ctl" ["-w", "-l", "logs/database.log", "start"] ""
+  putStrLn =<< readProcess "pg_ctl" ["-w", "-l", ".dev/logs/database.log", "start"] ""
 
 stopDB :: IO ()
 stopDB =
   putStrLn =<< readProcess "pg_ctl" ["-w", "stop"] ""
 
-createDB :: BS.ByteString -> IO ()
-createDB _ =
-  putStrLn =<< readProcess "createdb" ["conduit-hasql"] ""
+awaitDatabaseReady :: URI -> IO ()
+awaitDatabaseReady uri = void $ readProcess
+  "pg_isready"
+  ["-h", databaseHost uri, "-p", databasePort uri]
+  ""
 
-dropDB :: BS.ByteString -> IO ()
-dropDB _ =
-  putStrLn =<< readProcess "dropdb" ["conduit-hasql"] ""
+databaseExists :: String -> IO Bool
+databaseExists dbName = do
+  databases <- lines <$> readProcess
+    "psql"
+    [ "postgres"
+    , "--tuples-only"
+    , "--no-align"
+    , "--command"
+    , "SELECT datname FROM pg_database;"
+    ]
+    ""
+  pure $ dbName `elem` databases
+
+parseDatabaseUrl :: ByteString -> IO URI
+parseDatabaseUrl databaseUrl =
+  case URI.parseURI (ByteString.unpack databaseUrl) of
+    Nothing  -> die $ "Malformed URL: " ++ ByteString.unpack databaseUrl
+    Just uri -> pure uri
+
+databaseName :: URI -> String
+databaseName = drop 1 . URI.uriPath
+
+databaseHost :: URI -> String
+databaseHost = maybe "" URI.uriRegName . URI.uriAuthority
+
+databasePort :: URI -> String
+databasePort = drop 1 . maybe "" URI.uriPort . URI.uriAuthority
+
+createDB :: ByteString -> IO ()
+createDB databaseUrl =  do
+  uri <- parseDatabaseUrl databaseUrl
+  awaitDatabaseReady uri
+  exists <- databaseExists $ databaseName uri
+  when exists $ putStrLn $ "Database " ++  databaseName uri ++" exists. Skipping."
+  unless exists $ do
+    putStrLn $ "Creating database " ++ databaseName uri
+    void $ readProcess
+      "createdb"
+      [ "-h"
+      , databaseHost uri
+      , "-p"
+      , databasePort uri
+      , databaseName uri
+      ]
+      ""
+    putStrLn $ "Created " ++ databaseName uri
+
+dropDB :: ByteString -> IO ()
+dropDB databaseUrl =  do
+  uri <- parseDatabaseUrl databaseUrl
+  awaitDatabaseReady uri
+  exists <- databaseExists $ databaseName uri
+  unless exists $ putStrLn $ "Database " ++  databaseName uri ++" doesn't exist. Skipping."
+  when exists $ do
+    putStrLn $ "Dropping database " ++ databaseName uri
+    void $ readProcess
+      "dropdb"
+      [ "-h"
+      , databaseHost uri
+      , "-p"
+      , databasePort uri
+      , databaseName uri
+      ]
+      ""
+    putStrLn $ "Dropped " ++ databaseName uri
+
+setupDB :: ByteString -> IO ()
+setupDB databaseUrl = do
+  createDB databaseUrl
+  migrateAll databaseUrl
+
+resetDB :: ByteString -> IO ()
+resetDB databaseUrl = do
+  dropDB databaseUrl
+  setupDB databaseUrl
 
 data Command
   = Init
@@ -215,6 +338,8 @@ data Command
   | Drop
   | Migrate
   | Rollback
+  | Setup
+  | Reset
 
 parseCommand :: String -> Maybe Command
 parseCommand "init" = Just Init
@@ -224,11 +349,13 @@ parseCommand "create" = Just Create
 parseCommand "drop" = Just Drop
 parseCommand "migrate" = Just Migrate
 parseCommand "rollback" = Just Rollback
+parseCommand "setup" = Just Setup
+parseCommand "reset" = Just Reset
 parseCommand _ = Nothing
 
 main :: IO ()
 main = do
-  databaseUrl <- BS.pack <$> getEnv "DATABASE_URL"
+  databaseUrl <- ByteString.pack <$> getEnv "DATABASE_URL"
   command <- (parseCommand =<<) . listToMaybe <$> getArgs
   case command of
     Just Init -> initDB
@@ -238,4 +365,6 @@ main = do
     Just Drop -> dropDB databaseUrl
     Just Migrate -> migrateAll databaseUrl
     Just Rollback -> rollbackAll databaseUrl
+    Just Setup -> setupDB databaseUrl
+    Just Reset -> resetDB databaseUrl
     Nothing -> die "ERROR: Unknown command"
