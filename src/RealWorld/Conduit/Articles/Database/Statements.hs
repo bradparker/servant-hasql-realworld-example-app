@@ -9,7 +9,7 @@ module RealWorld.Conduit.Articles.Database.Statements
   , updateArticle
   ) where
 
-import Control.Lens (_1, _2, _3, _4, _5, _6, _7, view)
+import Control.Lens (_1, _2, _3, _4, _5, _6, view)
 import Control.Monad (replicateM)
 import Data.Foldable (foldl')
 import Data.Functor.Contravariant (contramap)
@@ -266,7 +266,6 @@ insertArticleManipulation
         , 'NotNull 'PGtext
         , 'NotNull 'PGint8
         , 'NotNull 'PGtimestamptz
-        , 'NotNull 'PGtimestamptz
         ]
        '["id" ::: 'NotNull 'PGint8]
 insertArticleManipulation = insertRow
@@ -278,12 +277,12 @@ insertArticleManipulation = insertRow
   :* (Set (param @4) `as` #body)
   :* (Set (param @5) `as` #author_id)
   :* (Set (param @6) `as` #created_at)
-  :* (Set (param @7) `as` #updated_at)
+  :* (Set (param @6) `as` #updated_at)
   )
   OnConflictDoRaise
   (Returning (#id `as` #id))
 
-insertArticle :: Statement (Text, Text, Text, Text, Int, UTCTime, UTCTime) Int
+insertArticle :: Statement (Text, Text, Text, Text, Int, UTCTime) Int
 insertArticle = Statement sql encoder decoder True
   where
     sql = renderSQL insertArticleManipulation
@@ -293,8 +292,7 @@ insertArticle = Statement sql encoder decoder True
       contramap (view _3) (Encoders.param Encoders.text) <>
       contramap (view _4) (Encoders.param Encoders.text) <>
       contramap (fromIntegral . view _5) (Encoders.param Encoders.int8) <>
-      contramap (view _6) (Encoders.param Encoders.timestamptz) <>
-      contramap (view _7) (Encoders.param Encoders.timestamptz)
+      contramap (view _6) (Encoders.param Encoders.timestamptz)
     decoder = Decoders.singleRow (Decoders.column (fromIntegral <$> Decoders.int8))
 
 deleteTagsManipulation :: Manipulation Schema '[ 'NotNull 'PGint8] '[]
@@ -354,7 +352,7 @@ updateArticleManipulation = update
 updateArticle
   :: Statement
        (Text, Maybe Text, Maybe Text, Maybe Text, Maybe Text, UTCTime)
-       (Maybe (Int, Text))
+       (Int, Text)
 updateArticle = Statement sql encoder decoder True
  where
   sql = renderSQL updateArticleManipulation
@@ -366,7 +364,7 @@ updateArticle = Statement sql encoder decoder True
     contramap (view _5) (Encoders.nullableParam Encoders.text) <>
     contramap (view _6) (Encoders.param Encoders.timestamptz)
   decoder =
-    Decoders.rowMaybe $
+    Decoders.singleRow $
       (,)
         <$> (fromIntegral <$> Decoders.column Decoders.int8)
         <*> Decoders.column Decoders.text

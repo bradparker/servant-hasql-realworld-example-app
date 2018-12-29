@@ -6,6 +6,8 @@ module RealWorld.Conduit.Articles.Database
   , update
   ) where
 
+import Control.Monad.Except (ExceptT)
+import Control.Monad.Trans.Class (lift)
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Time (getCurrentTime)
@@ -49,14 +51,13 @@ insert
   -> Text
   -> Text
   -> Text
-  -> Text
   -> Set Text
   -> Connection
-  -> IO (Either QueryError Article)
-insert currentUser slug title description body tags conn = do
-  time <- getCurrentTime
-  Session.run
-    (Sessions.insert slug title description body currentUser time tags)
+  -> ExceptT Sessions.Error IO Article
+insert currentUser title description body tags conn = do
+  time <- lift getCurrentTime
+  Sessions.runSession
+    (Sessions.insert currentUser time title description body tags)
     conn
 
 update
@@ -65,12 +66,11 @@ update
   -> Maybe Text
   -> Maybe Text
   -> Maybe Text
-  -> Maybe Text
   -> Maybe (Set Text)
   -> Connection
-  -> IO (Either QueryError (Maybe Article))
-update currentUser oldSlug slug title description body tags conn = do
-  time <- getCurrentTime
-  Session.run
-    (Sessions.update currentUser oldSlug slug title description body time tags)
+  -> ExceptT Sessions.Error IO Article
+update currentUser currentSlug title description body tags conn = do
+  time <- lift getCurrentTime
+  Sessions.runSession
+    (Sessions.update currentUser currentSlug time title description body tags)
     conn

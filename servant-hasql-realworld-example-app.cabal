@@ -44,7 +44,8 @@ library servant-hasql-realworld-example-lib
     lens,
     squeal-postgresql,
     text,
-    time
+    time,
+    validation
   hs-source-dirs:
     src
 
