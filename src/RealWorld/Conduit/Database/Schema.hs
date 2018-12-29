@@ -35,10 +35,10 @@ type ArticlesTable =
      , "fk_author_id" ::: 'ForeignKey '["author_id"] "users" '["id"]
      ] :=>
     '[ "id"   ::: 'Def :=> 'NotNull 'PGint8
-     , "body" ::: 'NoDef :=> 'NotNull 'PGtext
      , "slug" ::: 'NoDef :=> 'NotNull 'PGtext
      , "title" ::: 'NoDef :=> 'NotNull 'PGtext
      , "description" ::: 'NoDef :=> 'NotNull 'PGtext
+     , "body" ::: 'NoDef :=> 'NotNull 'PGtext
      , "author_id" ::: 'NoDef :=> 'NotNull 'PGint8
      , "created_at" ::: 'NoDef :=> 'NotNull 'PGtimestamptz
      , "updated_at" ::: 'NoDef :=> 'NotNull 'PGtimestamptz

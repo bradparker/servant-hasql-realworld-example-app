@@ -30,9 +30,11 @@ library servant-hasql-realworld-example-lib
   exposed-modules:
     RealWorld.Conduit.Articles.Article
     RealWorld.Conduit.Articles.Database
+    RealWorld.Conduit.Articles.Database.Sessions
+    RealWorld.Conduit.Articles.Database.Statements
     RealWorld.Conduit.Database.Schema
-    RealWorld.Conduit.Users.Profile
     RealWorld.Conduit.Users.Database
+    RealWorld.Conduit.Users.Profile
     Squeal.PostgreSQL.Extended
   build-depends:
     bytestring,
